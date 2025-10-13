@@ -3,33 +3,24 @@ package fn10.server;
 import java.io.IOException;
 import java.util.Scanner;
 
-import org.glassfish.grizzly.http.server.NetworkListener;
-import org.glassfish.grizzly.ssl.SSLContextConfigurator;
-import org.glassfish.grizzly.ssl.SSLEngineConfigurator;
-import org.glassfish.tyrus.server.Server;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
 
 public class App {
     public static void main(String[] args) throws IOException {
-        Server server = new Server(
-                "localhost",
-                443,
-                "/ws",
-                null,
-                ChatEndpoint.class);
-                
+        Server server = new Server(443);
+
+        ServletContextHandler handler = new ServletContextHandler();
+        server.setHandler(handler);
+
+        JakartaWebSocketServletContainerInitializer.configure(handler, null);
+        handler.addServlet(JWSInitServlet.class, "/ws/*");
+
         try {
             server.start();
-
-            System.out.println("Server started");
-
-            System.out.println("Press enter to stop.");
-            new Scanner(System.in).nextLine();
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            server.stop();
-            System.out.println("Server stopped.");
         }
-
     }
 }

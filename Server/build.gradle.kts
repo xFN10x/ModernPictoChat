@@ -12,12 +12,9 @@ dependencies {
 
     // https://mvnrepository.com/artifact/jakarta.websocket/jakarta.websocket-api
     implementation("jakarta.websocket:jakarta.websocket-api:2.2.0")
-    
-    // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-server
-    implementation("org.glassfish.tyrus:tyrus-server:2.2.0")
 
-    // https://mvnrepository.com/artifact/org.glassfish.tyrus/tyrus-container-grizzly-server
-    implementation("org.glassfish.tyrus:tyrus-container-grizzly-server:2.2.0")
+    // https://mvnrepository.com/artifact/org.eclipse.jetty.websocket/websocket-jakarta-server
+    implementation("org.eclipse.jetty.websocket:websocket-jakarta-server:11.0.26")
 }
 
 java {
