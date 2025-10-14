@@ -15,6 +15,10 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.websocket.jakarta.server.config.JakartaWebSocketServletContainerInitializer;
 
+import fn10.server.servlet.ApiServlet;
+import fn10.server.servlet.FrontendServlet;
+import fn10.server.servlet.WebsocketServlet;
+
 public class App {
     public static void main(String[] args) throws IOException {
         Server server = new Server();
@@ -40,8 +44,9 @@ public class App {
 
 
         JakartaWebSocketServletContainerInitializer.configure(handler, null);
-        handler.addServlet(JWSInitServlet.class, "/ws/*");
+        handler.addServlet(WebsocketServlet.class, "/ws/*");
         handler.addServlet(FrontendServlet.class, "/");
+        handler.addServlet(ApiServlet.class, "/api/*");
 
         server.setConnectors(new Connector[] { sslConnector, connector });
 

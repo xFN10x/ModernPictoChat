@@ -1,7 +1,8 @@
-package fn10.server;
+package fn10.server.servlet;
 
 import java.io.IOException;
 
+import fn10.server.endpoints.ChatEndpoint;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,7 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.websocket.DeploymentException;
 import jakarta.websocket.server.ServerContainer;
 
-public class JWSInitServlet extends HttpServlet {
+public class WebsocketServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         try { // taken from

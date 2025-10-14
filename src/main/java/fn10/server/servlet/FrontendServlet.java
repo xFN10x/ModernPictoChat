@@ -1,4 +1,4 @@
-package fn10.server;
+package fn10.server.servlet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -59,6 +59,7 @@ public class FrontendServlet extends HttpServlet {
             }
         }
 
-        System.out.println(request.getMethod() + ": " + request.getRequestURI());
+        System.out.println("(" + getClass().getName() + ") " + request.getMethod() + ": " + request.getRequestURI());
+
     }
 }

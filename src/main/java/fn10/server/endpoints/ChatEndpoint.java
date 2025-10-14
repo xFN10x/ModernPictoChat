@@ -1,11 +1,13 @@
-package fn10.server;
+package fn10.server.endpoints;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import jakarta.websocket.CloseReason;
 import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.OnClose;
 import jakarta.websocket.OnMessage;
 import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
@@ -31,5 +33,11 @@ public class ChatEndpoint {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @OnClose
+    public void clientLeft(Session session, CloseReason cr) {
+        currentClients.remove(session);
+        System.out.println("Client disconnected: " + session.getId());
     }
 }

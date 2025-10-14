@@ -15,6 +15,9 @@ dependencies {
 
     // https://mvnrepository.com/artifact/org.eclipse.jetty.websocket/websocket-jakarta-server
     implementation("org.eclipse.jetty.websocket:websocket-jakarta-server:11.0.26")
+
+    // https://mvnrepository.com/artifact/com.google.code.gson/gson
+    implementation("com.google.code.gson:gson:2.13.2")
 }
 
 java {
