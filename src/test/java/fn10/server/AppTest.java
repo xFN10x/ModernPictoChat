@@ -1,3 +1,3 @@
 package fn10.server;
 
-class AppTest {}
+public class AppTest {}

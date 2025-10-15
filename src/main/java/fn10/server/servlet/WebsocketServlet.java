@@ -34,7 +34,7 @@ public class WebsocketServlet extends HttpServlet {
             HttpServletRequest request,
             HttpServletResponse response)
             throws ServletException, IOException {
-        response.sendRedirect("/test");
-        //System.out.println(request.getRequestURL());
+        response.sendRedirect("/");
+        System.out.println("(" + getClass().getSimpleName() + ") " + request.getMethod() + " ("+ request.getContentType() + "): " + request.getRequestURI());
     }
 }

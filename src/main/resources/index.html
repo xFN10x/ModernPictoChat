@@ -1,10 +1,66 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="js/helloworld.ts"></script>
+    <script async defer src="js/mainPage.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    <meta http-equiv="Content-Type" content="text/html" />
+    <meta name="author" content="xFN10x" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Modern Pictochat</title>
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      .noto-sans {
+        font-family: "Noto Sans", sans-serif;
+        font-optical-sizing: auto;
+        font-weight: 100;
+        font-style: normal;
+        font-variation-settings: "wdth" 100;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p {
+        font-family: "Noto Sans";
+      }
+    </style>
   </head>
 
-  <body>
-    nothing to see yet
+  <body
+    style="
+      background: #dbdbdb;
+      background: linear-gradient(
+        90deg,
+        rgba(219, 219, 219, 1) 0%,
+        rgba(102, 102, 102, 1) 100%
+      );
+    "
+  >
+    <h1 style="text-align: center">Modern Pictochat</h1>
+    <h3 style="text-align: center">
+      Pictochat in the web, made for modern devices!
+    </h3>
+    <div>
+        <div class="g-recaptcha" data-sitekey="6LdblOorAAAAADy0OCj0YX71wcbOE6YSP0LY9UlK" data-callback = "verifyCapcha"></div>
+    </div>
+    <div style="justify-content: center; display: flex">
+      <div style="display: flex; margin: 0 auto, auto">
+        <p style="text-align: center">Current Chats:</p>
+        <div style="width: 10rem"></div>
+        <p id="status-text" style="text-align: center"><i>(Loading...)</i></p>
+      </div>
+    </div>
   </body>
 </html>

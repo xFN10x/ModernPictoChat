@@ -4,6 +4,10 @@ import java.io.IOException;
 
 import org.eclipse.jetty.http.HttpStatus;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import fn10.server.chat.Chat;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,20 +20,26 @@ public class ApiServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String requestURI = request.getRequestURI().replace("/api", "");
+        String[] UriParts = requestURI.split("/");
 
-        switch (requestURI) {
-            case "/getRoomsAndPeopleInThem":
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+        switch (UriParts[0]) {
+            case "getRoomsAndPeopleInThem":
                 response.setContentType("text/json");
 
-                response.getWriter().println("{}");
+                response.getWriter().println(gson.toJson(Chat.getChatIdsAndPeopleInThem()));
                 break;
-        
+
+            case "capchaValid":
+            request.get
+            break;
+
             default:
-            response.setStatus(HttpStatus.OK_200);
+                response.setStatus(HttpStatus.NOT_FOUND_404);
                 break;
         }
-
-        System.out.println("(" + getClass().getName() + ") " + request.getMethod() + ": " + requestURI);
-
+        
+        System.out.println("(" + getClass().getSimpleName() + ") " + request.getMethod() + " ("+ request.getContentType() + "): " + request.getRequestURI());
     }
 }

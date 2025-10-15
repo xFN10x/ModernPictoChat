@@ -27,5 +27,9 @@ java {
 }
 
 application {
-    mainClass = "server.App"
+    mainClass = "fn10.server.App"
+}
+
+tasks.test {
+    failOnNoDiscoveredTests = false
 }
