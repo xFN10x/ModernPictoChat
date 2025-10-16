@@ -17,6 +17,7 @@ public class FrontendServlet extends HttpServlet {
 
     private InputStream getWebsiteFileStream(String file) throws IOException {
         Path path = Path.of(App.path, "website", file);
+        System.out.println("(" + getClass().getSimpleName() + ") " + "Opening stream: " + path.toFile());
         return Files.newInputStream(path, StandardOpenOption.READ);
     }
 
@@ -35,15 +36,14 @@ public class FrontendServlet extends HttpServlet {
                     response.setStatus(HttpServletResponse.SC_OK);
                 } else {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    stream = getClass().getResourceAsStream("/404.html");
+                    stream = getWebsiteFileStream("/404.html");
                 }
             } else {
-                stream = getClass().getResourceAsStream("/index.html");
+                stream = getWebsiteFileStream("/index.html");
                 if (stream != null) {
                     response.setStatus(HttpServletResponse.SC_OK);
                 } else {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                    stream = getClass().getResourceAsStream("/404.html");
                 }
             }
         } else {
@@ -59,12 +59,14 @@ public class FrontendServlet extends HttpServlet {
             }
         }
 
-        byte[] buffer = new byte[1024 * 8];
-        int j = -1;
-        while ((j = stream.read(buffer)) != -1) {
-            response.getWriter().write(new String(buffer, StandardCharsets.ISO_8859_1), 0, j);
+        if (stream != null) {
+            byte[] buffer = new byte[1024 * 8];
+            int j = -1;
+            while ((j = stream.read(buffer)) != -1) {
+                response.getWriter().write(new String(buffer, StandardCharsets.ISO_8859_1), 0, j);
+            }
+            stream.close();
         }
-        stream.close();
 
         System.out.println("(" + getClass().getSimpleName() + ") " + request.getMethod() + " ("
                 + response.getContentType() + "): " + request.getRequestURI());
