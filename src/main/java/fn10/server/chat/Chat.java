@@ -14,14 +14,6 @@ public class Chat {
     static {
         chats.add(new Chat("Chat A", 0));
         chats.add(new Chat("Chat B",1));
-        /*
-         * chats.add(new Chat(2));
-         * chats.add(new Chat(3));
-         * chats.add(new Chat(4));
-         * chats.add(new Chat(5));
-         * chats.add(new Chat(6));
-         * chats.add(new Chat(7));
-         */
     }
 
     /**

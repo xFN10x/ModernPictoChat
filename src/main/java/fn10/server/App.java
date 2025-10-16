@@ -1,6 +1,7 @@
 package fn10.server;
 
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Scanner;
 
 import org.eclipse.jetty.http.HttpVersion;
@@ -20,7 +21,23 @@ import fn10.server.servlet.FrontendServlet;
 import fn10.server.servlet.WebsocketServlet;
 
 public class App {
+    public static String path;
+
     public static void main(String[] args) throws IOException {
+        System.out.println("Enter address of secrets.");
+        System.out.print("Directory (enter 1 or 2 to use presets): ");
+        Scanner scanner = new Scanner(System.in);
+        String nl = scanner.nextLine();
+        if (nl.equals("1")) {
+            path = "C:\\MPC\\";
+        } else if (nl.equals("2")) {
+            path = "/var/opt/mpc/";
+        } else {
+            path = nl;
+        }
+
+        scanner.close();
+
         Server server = new Server();
 
         ServerConnector connector = new ServerConnector(server);
@@ -34,14 +51,14 @@ public class App {
 
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 
-        sslContextFactory.setKeyStorePath("C:\\Users\\mathd\\Downloads\\cert.jks");
+        sslContextFactory.setKeyStorePath(path + "cert.jks");
         sslContextFactory.setKeyStorePassword("isaplate");
         sslContextFactory.setKeyManagerPassword("isaplate");
 
-        ServerConnector sslConnector = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
+        ServerConnector sslConnector = new ServerConnector(server,
+                new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
                 new HttpConnectionFactory(https));
         sslConnector.setPort(443);
-
 
         JakartaWebSocketServletContainerInitializer.configure(handler, null);
         handler.addServlet(WebsocketServlet.class, "/ws/*");

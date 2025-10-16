@@ -3,24 +3,34 @@ package fn10.server.servlet;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
+import fn10.server.App;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 public class FrontendServlet extends HttpServlet {
+
+    private InputStream getWebsiteFileStream(String file) throws IOException {
+        Path path = Path.of(App.path, "website", file);
+        return Files.newInputStream(path, StandardOpenOption.READ);
+    }
+
     public void doGet(
             HttpServletRequest request,
             HttpServletResponse response)
             throws ServletException, IOException {
-                
+
         InputStream stream;
         if (!request.getRequestURI().contains(".")) {
             response.setContentType("text/html");
             if (!request.getRequestURI().equals("/")) {
                 // request.getRequestURI() already has a / at the start
-                stream = getClass().getResourceAsStream(request.getRequestURI() + ".html");
+                stream = getWebsiteFileStream(request.getRequestURI() + ".html");
                 if (stream != null) {
                     response.setStatus(HttpServletResponse.SC_OK);
                 } else {
@@ -40,7 +50,7 @@ public class FrontendServlet extends HttpServlet {
             response.setContentType(request.getContentType() == null ? getContentTypeFromURL(request.getRequestURI())
                     : request.getContentType());
             // request.getRequestURI() already has a / at the start
-            stream = getClass().getResourceAsStream(request.getRequestURI());
+            stream = getWebsiteFileStream(request.getRequestURI());
             if (stream != null) {
                 response.setStatus(HttpServletResponse.SC_OK);
 
@@ -54,10 +64,10 @@ public class FrontendServlet extends HttpServlet {
         while ((j = stream.read(buffer)) != -1) {
             response.getWriter().write(new String(buffer, StandardCharsets.ISO_8859_1), 0, j);
         }
+        stream.close();
 
         System.out.println("(" + getClass().getSimpleName() + ") " + request.getMethod() + " ("
                 + response.getContentType() + "): " + request.getRequestURI());
-
     }
 
     public String getContentTypeFromURL(String requestURI) {
