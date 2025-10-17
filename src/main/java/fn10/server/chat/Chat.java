@@ -13,7 +13,7 @@ public class Chat {
     private static List<Chat> chats = new ArrayList<Chat>();
     static {
         chats.add(new Chat("Chat A", 0));
-        chats.add(new Chat("Chat B",1));
+        chats.add(new Chat("Chat B", 1));
     }
 
     /**

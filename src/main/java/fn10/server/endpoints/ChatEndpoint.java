@@ -13,7 +13,7 @@ import jakarta.websocket.OnOpen;
 import jakarta.websocket.Session;
 import jakarta.websocket.server.ServerEndpoint;
 
-@ServerEndpoint("/chat")
+@ServerEndpoint("/ws")
 public class ChatEndpoint {
 
     private static Set<Session> currentClients = Collections.synchronizedSet(new HashSet<Session>());

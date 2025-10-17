@@ -61,7 +61,7 @@ public class App {
         sslConnector.setPort(443);
 
         JakartaWebSocketServletContainerInitializer.configure(handler, null);
-        handler.addServlet(WebsocketServlet.class, "/ws/*");
+        handler.addServlet(WebsocketServlet.class, "/ws");
         handler.addServlet(FrontendServlet.class, "/");
         handler.addServlet(ApiServlet.class, "/api/*");
 
