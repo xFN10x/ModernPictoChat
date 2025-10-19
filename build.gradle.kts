@@ -1,9 +1,9 @@
 plugins {
     application
+    id("com.gradleup.shadow") version "9.2.2"
 }
 
 repositories {
-    // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
 
@@ -35,4 +35,12 @@ application {
 
 tasks.test {
     failOnNoDiscoveredTests = false
+}
+
+val version = "1.1.0"
+
+tasks.shadowJar {
+  archiveBaseName = "DesktopClicker"
+  archiveVersion = version
+  destinationDirectory = layout.buildDirectory.dir("builtJars")
 }

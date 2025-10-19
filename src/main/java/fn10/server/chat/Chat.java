@@ -55,8 +55,11 @@ public class Chat {
     }
 
     private static class ChatInfo {
+        @SuppressWarnings("unused")
         public String name;
+        @SuppressWarnings("unused")
         public int maxPeople;
+        @SuppressWarnings("unused")
         public int peopleCurrently;
 
         public ChatInfo(String name, int max, int rn) {

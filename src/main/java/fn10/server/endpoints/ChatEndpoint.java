@@ -2,7 +2,9 @@ package fn10.server.endpoints;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.naming.NameNotFoundException;
@@ -42,12 +44,52 @@ public class ChatEndpoint {
         public String id;
     }
 
+    private static class ChatNotification {
+        public static final int JOINING = 0;
+        public static final int LEAVNG = 1;
+        public static final int CHAT = 2;
+        public int type;
+        public String username;
+        public String data;
+    }
+
     private static Set<Session> currentClients = Collections.synchronizedSet(new HashSet<Session>());
+    private static Map<Session, String> usernames = new HashMap<Session, String>();
 
     public static void notifySessionsOfMessage(Session exclude, ChatMessage mes) {
+        ChatNotification building = new ChatNotification();
+        building.type = ChatNotification.CHAT;
+        building.username = mes.username;
+        building.data = mes.data;
+        notifySessionsOfMessage(exclude, building);
+    }
+
+    public static void notifySessionsOfJoining(Session joining) {
+        ChatNotification building = new ChatNotification();
+        building.type = ChatNotification.JOINING;
+        if (usernames.containsKey(joining))
+            building.username = usernames.get(joining);
+        else {
+            building.username = "UNKNOWN";
+        }
+        notifySessionsOfMessage(null, building);
+    }
+
+    public static void notifySessionsOfLeaving(Session leaving) {
+        ChatNotification building = new ChatNotification();
+        building.type = ChatNotification.LEAVNG;
+        if (usernames.containsKey(leaving))
+            building.username = usernames.get(leaving);
+        else {
+            building.username = "UNKNOWN";
+        }
+        notifySessionsOfMessage(null, building);
+    }
+
+    public static void notifySessionsOfMessage(Session exclude, ChatNotification mes) {
         for (Session session : currentClients) {
-            if (Chat.getChatPersonIsIn(session) != null && session != exclude) {
-                session.getAsyncRemote().sendText("message got: " + mes.data);
+            if ((Chat.getChatPersonIsIn(session) != null && session != exclude) || exclude == null) {
+                session.getAsyncRemote().sendText(gson.toJson(mes));
             }
         }
     }
@@ -82,6 +124,7 @@ public class ChatEndpoint {
         } else if (message.equals("close")) {
             clientLeft(session,
                     new CloseReason(CloseReason.CloseCodes.GOING_AWAY, "The user reloaded the page/left the page."));
+            notifySessionsOfLeaving(session);
             return;
         }
         Message got;
@@ -104,8 +147,10 @@ public class ChatEndpoint {
                     break;
                 }
                 Chat.getPublicChatById(data.roomID).addPerson(data.username, session);
+                usernames.put(session, data.username);
                 session.getAsyncRemote()
                         .sendText("{\"status\": \"Connected to chat.\", \"id\": \"" + session.getId() + "\"}");
+                notifySessionsOfJoining(session);
                 for (Session sessions : currentClients) {
                     sessions.getAsyncRemote().sendText("reloadChats");
                 }
