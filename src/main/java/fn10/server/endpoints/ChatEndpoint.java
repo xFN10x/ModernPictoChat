@@ -51,17 +51,32 @@ public class ChatEndpoint {
 
     @OnOpen
     public void clientConnected(Session session, EndpointConfig config) {
-        currentClients.add(session);
         System.out.println("New Client connected: " + session.getId());
+
+        currentClients.add(session);
     }
 
     @OnMessage
     public void messageGot(String message, Session session) {
+        System.out.println("Got message: " + message);
+        if (message.equals("ping")) {
+            System.out.println("Got Ping from " + session.getId());
+            try {
+                session.getBasicRemote().sendText("pong");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return;
+        } else if (message.equals("close")) {
+            clientLeft(session,
+                    new CloseReason(CloseReason.CloseCodes.GOING_AWAY, "The user reloaded the page/left the page."));
+            return;
+        }
         Message got;
         try {
             got = gson.fromJson(message, Message.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("not json message");
             try {
                 session.getBasicRemote().sendText("error");
             } catch (IOException e2) {
@@ -87,12 +102,20 @@ public class ChatEndpoint {
                 Chat.getPublicChatById(data.roomID).addPerson(data.username, session);
                 try {
                     session.getBasicRemote().sendText("{\"status\": \"Connected to chat.\"}");
+                    for (Session sessions : currentClients) {
+                        try {
+                            sessions.getBasicRemote().sendText("reloadChats");
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
                 break;
             case Message.SEND_MESSAGE:
                 Chat in = Chat.getChatPersonIsIn(session);
+                System.out.println(in);
                 if (in != null)
                     in.sendMessage(session, got.data);
                 else {
@@ -105,15 +128,18 @@ public class ChatEndpoint {
                 break;
 
             default:
+                System.out.println("Cannot find that message type");
                 break;
         }
-        System.out.println("Got message: " + message);
-
     }
 
     @OnClose
     public void clientLeft(Session session, CloseReason cr) {
         currentClients.remove(session);
+        Chat chat;
+        if ((chat = Chat.getChatPersonIsIn(session)) != null) {
+            chat.removePerson(session);
+        }
         System.out.println("Client disconnected: " + session.getId());
     }
 }
