@@ -1,11 +1,14 @@
 package fn10.server.chat;
 
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.naming.NameNotFoundException;
 
 import fn10.server.endpoints.ChatEndpoint;
 import jakarta.websocket.Session;
@@ -93,15 +96,40 @@ public class Chat {
         return id;
     }
 
-    public void sendMessage(Session sender, String data) {
+    public void sendMessage(String senderID, String data) {
+        Session sender = null;
+        for (Session ses : peopleInHere.keySet()) {
+            if (ses.getId().equals(senderID)) {
+                sender = ses;
+                break;
+            }
+        }
+        if (sender == null) {
+            System.out.println("(" + getClass().getSimpleName() + ")  Session " + sender.getId()
+                    + ", isnt in here! Chat: " + Name);
+        }
+
         if (peopleInHere.containsKey(sender)) {
             ChatMessage message = new ChatMessage();
             message.username = peopleInHere.get(sender);
             message.dateSent = Instant.now();
             message.data = data;
             messages.add(message);
-            System.out.println("Chat sent by " + sender.getId() + ": " + data);
+            System.out.println("Chat sent by " + senderID);
+            try {
+                ChatEndpoint.SendTextToSession(sender, "{\"status\": \"Sent Chat\", \"chatStatus\": \"200\"}");
+            } catch (NameNotFoundException | IOException e) {
+                e.printStackTrace();
+                System.out.println("Session couldnt get status, removing chat");
+                try {
+                    ChatEndpoint.SendTextToSession(sender, "{\"status\": \"Failed\", \"chatStatus\": \"401\"}");
+                } catch (NameNotFoundException | IOException e1) {
+                }
+                messages.remove(message);
+                return;
+            }
             ChatEndpoint.notifySessionsOfMessage(sender, message);
+
         } else {
             System.out.println("(" + getClass().getSimpleName() + ")  Session " + sender.getId()
                     + ", isnt in here! Chat: " + Name);
@@ -113,8 +141,12 @@ public class Chat {
         this.id = id;
     }
 
-    public int getPeopleInChat() {
+    public int getAmountOfPeopleInChat() {
         return peopleInHere.size();
+    }
+
+    public Map<Session, String> getPeopleInChat() {
+        return peopleInHere;
     }
 
     public int getPeopleMax() {

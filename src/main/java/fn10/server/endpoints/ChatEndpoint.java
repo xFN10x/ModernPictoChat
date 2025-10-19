@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.naming.NameNotFoundException;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -35,24 +37,34 @@ public class ChatEndpoint {
         public String username;
     }
 
+    private static class SendingChatData {
+        public String data;
+        public String id;
+    }
+
     private static Set<Session> currentClients = Collections.synchronizedSet(new HashSet<Session>());
 
     public static void notifySessionsOfMessage(Session exclude, ChatMessage mes) {
-        try {
-            for (Session session : currentClients) {
-                if (Chat.getChatPersonIsIn(session) != null && session != exclude) {
-                    session.getBasicRemote().sendText("message got: " + mes.data);
-                }
+        for (Session session : currentClients) {
+            if (Chat.getChatPersonIsIn(session) != null && session != exclude) {
+                session.getAsyncRemote().sendText("message got: " + mes.data);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
+    }
+
+    public static void SendTextToSession(Session ses, String text) throws NameNotFoundException, IOException {
+        for (Session currentClient : currentClients) {
+            if (currentClient == ses) {
+                currentClient.getAsyncRemote().sendText(text);
+                return;
+            }
+        }
+        throw new NameNotFoundException("The session: " + ses.getId() + " isnt connected.");
     }
 
     @OnOpen
     public void clientConnected(Session session, EndpointConfig config) {
         System.out.println("New Client connected: " + session.getId());
-
         currentClients.add(session);
     }
 
@@ -62,7 +74,7 @@ public class ChatEndpoint {
         if (message.equals("ping")) {
             System.out.println("Got Ping from " + session.getId());
             try {
-                session.getBasicRemote().sendText("pong");
+                session.getAsyncRemote().sendText("pong");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -77,11 +89,7 @@ public class ChatEndpoint {
             got = gson.fromJson(message, Message.class);
         } catch (Exception e) {
             System.out.println("not json message");
-            try {
-                session.getBasicRemote().sendText("error");
-            } catch (IOException e2) {
-                e2.printStackTrace();
-            }
+            session.getAsyncRemote().sendText("error");
             return;
         }
 
@@ -92,38 +100,32 @@ public class ChatEndpoint {
                     data = gson.fromJson(got.data, JoiningChatData.class);
                 } catch (Exception e) {
                     e.printStackTrace();
-                    try {
-                        session.getBasicRemote().sendText("Bad Request");
-                    } catch (IOException e2) {
-                        e2.printStackTrace();
-                    }
+                    session.getAsyncRemote().sendText("Bad Request");
                     break;
                 }
                 Chat.getPublicChatById(data.roomID).addPerson(data.username, session);
-                try {
-                    session.getBasicRemote().sendText("{\"status\": \"Connected to chat.\"}");
-                    for (Session sessions : currentClients) {
-                        try {
-                            sessions.getBasicRemote().sendText("reloadChats");
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                session.getAsyncRemote()
+                        .sendText("{\"status\": \"Connected to chat.\", \"id\": \"" + session.getId() + "\"}");
+                for (Session sessions : currentClients) {
+                    sessions.getAsyncRemote().sendText("reloadChats");
                 }
                 break;
             case Message.SEND_MESSAGE:
                 Chat in = Chat.getChatPersonIsIn(session);
-                System.out.println(in);
-                if (in != null)
-                    in.sendMessage(session, got.data);
-                else {
-                    try {
-                        session.getBasicRemote().sendText("{\"status\": \"Not in chat\"}");
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                SendingChatData sendData;
+                try {
+                    sendData = gson.fromJson(got.data, SendingChatData.class);
+                } catch (Exception e) {
+                    session.getAsyncRemote().sendText("Bad Request");
+                    return;
+                }
+                // System.out.println(in);
+                if (in != null) {
+                    // idk why the hell this is using the wrong session for sending, we are just
+                    // gonna have to save it client sided
+                    in.sendMessage(sendData.id, sendData.data);
+                } else {
+                    session.getAsyncRemote().sendText("{\"status\": \"Not in chat\"}");
                 }
                 break;
 
@@ -140,6 +142,7 @@ public class ChatEndpoint {
         if ((chat = Chat.getChatPersonIsIn(session)) != null) {
             chat.removePerson(session);
         }
-        System.out.println("Client disconnected: " + session.getId());
+        System.out.println("Client (" + session.getId() + ") disconnected, because " + cr.getReasonPhrase() + " ("
+                + cr.getCloseCode().toString() + ")");
     }
 }

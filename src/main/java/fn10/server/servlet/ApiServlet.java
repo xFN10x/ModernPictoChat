@@ -1,6 +1,8 @@
 package fn10.server.servlet;
 
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -51,13 +53,31 @@ public class ApiServlet extends HttpServlet {
                 if (UriParts[2].isEmpty() || UriParts[2] == null) {
                     response.setStatus(HttpStatus.BAD_REQUEST_400);
                 }
-                response.setContentType("text/plain");
-                Chat chat = Chat.getChatByName(UriParts[2].replace("%20", " "));
+                Chat chat = Chat.getChatByName(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8));
                 if (chat == null) {
                     System.out.println("Cannot find chat with name \"" + UriParts[2] + '"');
                     response.setStatus(HttpStatus.NOT_FOUND_404);
                 }
                 response.getWriter().println(chat.getId());
+                break;
+
+            case "isPersonInChat":
+                // format: api/isPersonInChat/(chat #)/(username)
+                if (UriParts[2].isEmpty() || UriParts[2] == null) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                }
+                if (UriParts[3].isEmpty() || UriParts[3] == null) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                }
+                Chat chat2 = Chat
+                        .getPublicChatById(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)));
+                response.setContentType("text/plain");
+                response.getWriter().print(
+                        chat2.getPeopleInChat().containsValue(URLDecoder.decode(UriParts[3], StandardCharsets.UTF_8)));
+                System.out.println(
+                        "Chat: " + Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)) + " has: \""
+                                + String.join(", ", chat2.getPeopleInChat().values()) + "\" in it. Checking: "
+                                + URLDecoder.decode(UriParts[3], StandardCharsets.UTF_8));
                 break;
 
             case "capchaValid":
