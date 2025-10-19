@@ -7,12 +7,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.hc.client5.http.classic.methods.HttpPost;
-import org.apache.hc.client5.http.entity.EntityBuilder;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ClassicHttpResponse;
-import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.Header;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpException;
@@ -47,6 +45,19 @@ public class ApiServlet extends HttpServlet {
                 response.setContentType("text/json");
 
                 response.getWriter().println(gson.toJson(Chat.getChatIdsAndPeopleInThem()));
+                break;
+
+            case "getChatByName":
+                if (UriParts[2].isEmpty() || UriParts[2] == null) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                }
+                response.setContentType("text/plain");
+                Chat chat = Chat.getChatByName(UriParts[2].replace("%20", " "));
+                if (chat == null) {
+                    System.out.println("Cannot find chat with name \"" + UriParts[2] + '"');
+                    response.setStatus(HttpStatus.NOT_FOUND_404);
+                }
+                response.getWriter().println(chat.getId());
                 break;
 
             case "capchaValid":

@@ -1,12 +1,14 @@
 package fn10.server.chat;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.jetty.server.session.Session;
+import fn10.server.endpoints.ChatEndpoint;
+import jakarta.websocket.Session;
 
 public class Chat {
 
@@ -29,8 +31,24 @@ public class Chat {
         return null;
     }
 
+    public static Chat getChatByName(String name) {
+        for (Chat chat : chats) {
+            if (chat.Name.equals(name))
+                return chat;
+        }
+        return null;
+    }
+
     public static List<Chat> getChats() {
         return chats;
+    }
+
+    public static Chat getChatPersonIsIn(Session ses) {
+        for (Chat chat : chats) {
+            if (chat.peopleInHere.containsKey(ses))
+                return chat;
+        }
+        return null;
     }
 
     private static class ChatInfo {
@@ -58,10 +76,37 @@ public class Chat {
         return building;
     }
 
+    public static class ChatMessage {
+        public String username;
+        public Instant dateSent;
+        public String data;
+
+    }
+
     private final int maxPeople = 15;
     private final int id;
     public final String Name;
-    private Map<String, Session> peopleInHere = new HashMap<String, Session>();
+    private Map<Session, String> peopleInHere = new HashMap<Session, String>();
+    private List<ChatMessage> messages = new ArrayList<ChatMessage>();
+
+    public int getId() {
+        return id;
+    }
+
+    public void sendMessage(Session sender, String data) {
+        if (peopleInHere.containsKey(sender)) {
+            ChatMessage message = new ChatMessage();
+            message.username = peopleInHere.get(sender);
+            message.dateSent = Instant.now();
+            message.data = data;
+            messages.add(message);
+            System.out.println("Chat sent by " + sender.getId() + ": " + data);
+            ChatEndpoint.notifySessionsOfMessage(sender, message);
+        } else {
+            System.out.println("(" + getClass().getSimpleName() + ")  Session " + sender.getId()
+                    + ", isnt in here! Chat: " + Name);
+        }
+    }
 
     public Chat(String name, int id) {
         this.Name = name;
@@ -77,11 +122,11 @@ public class Chat {
     }
 
     public void addPerson(String username, Session ses) {
-        peopleInHere.put(username, ses);
+        peopleInHere.put(ses, username);
     }
 
-    public void removePerson(String username) {
-        peopleInHere.remove(username);
+    public void removePerson(Session ses) {
+        peopleInHere.remove(ses);
     }
 
 }
