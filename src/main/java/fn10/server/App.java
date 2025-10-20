@@ -25,8 +25,15 @@ public class App {
     public static void main(String[] args) throws IOException {
         System.out.println("Enter address of secrets.");
         System.out.print("Directory (enter 1 or 2 to use presets): ");
+
         Scanner scanner = new Scanner(System.in);
-        String nl = scanner.nextLine();
+        String nl;
+        if (args.length >= 1) {
+            nl = args[0];
+        } else {
+            nl = scanner.nextLine();
+
+        }
         if (nl.equals("1")) {
             path = "C:\\MPC\\";
         } else if (nl.equals("2")) {
@@ -35,9 +42,13 @@ public class App {
             path = nl;
         }
         System.out.print("Port (HTTPS): ");
-        int nl2 = Integer.parseInt(scanner.nextLine());
-        // System.out.print("Port (HTTP): ");
-        // int nl3 = Integer.parseInt(scanner.nextLine());
+        int nl2;
+        if (args.length >= 1) {
+            nl2 = Integer.parseInt(args[1]);
+        } else {
+            nl2 = Integer.parseInt(scanner.nextLine());
+
+        }
         System.out.println("Starting server on https://127.0.0.1:" + nl2);
 
         scanner.close();
