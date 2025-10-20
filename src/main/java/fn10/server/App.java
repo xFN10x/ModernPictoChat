@@ -32,7 +32,6 @@ public class App {
             nl = args[0];
         } else {
             nl = scanner.nextLine();
-
         }
         if (nl.equals("1")) {
             path = "C:\\MPC\\";

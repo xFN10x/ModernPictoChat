@@ -37,10 +37,9 @@ tasks.test {
     failOnNoDiscoveredTests = false
 }
 
-val version = "1.0.0"
-
 tasks.shadowJar {
-  archiveBaseName = "MPC"
-  archiveVersion = version
+  archiveBaseName = "server"
+  archiveVersion = ""
+  archiveClassifier = ""
   destinationDirectory = layout.buildDirectory.dir("builtJars")
 }
