@@ -86,7 +86,8 @@ Now go to the website folder, go to `index.html`, go to line 69 (haha funny numb
 ></h-captcha>
 ```
 
-Replace the `site-key` with your site key and save.
+Replace the `site-key` with your site key,
+And also replace host with the domain attributed to the site key and save.
 
 (Your file structure should look like this)
 ![file structure](/readmeimages/structure.png)
