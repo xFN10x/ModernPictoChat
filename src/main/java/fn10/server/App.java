@@ -34,13 +34,18 @@ public class App {
         } else {
             path = nl;
         }
+        System.out.print("Port (HTTPS): ");
+        int nl2 = Integer.parseInt(scanner.nextLine());
+        // System.out.print("Port (HTTP): ");
+        // int nl3 = Integer.parseInt(scanner.nextLine());
+        System.out.println("Starting server on https://127.0.0.1:" + nl2);
 
         scanner.close();
 
         Server server = new Server();
 
         ServerConnector connector = new ServerConnector(server);
-        connector.setPort(80);
+        // connector.setPort(nl3);
 
         ServletContextHandler handler = new ServletContextHandler();
         server.setHandler(handler);
@@ -57,7 +62,7 @@ public class App {
         ServerConnector sslConnector = new ServerConnector(server,
                 new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
                 new HttpConnectionFactory(https));
-        sslConnector.setPort(443);
+        sslConnector.setPort(nl2);
 
         JakartaWebSocketServletContainerInitializer.configure(handler, null);
         handler.addServlet(WebsocketServlet.class, "/ws");

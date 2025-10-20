@@ -37,10 +37,10 @@ tasks.test {
     failOnNoDiscoveredTests = false
 }
 
-val version = "1.1.0"
+val version = "1.0.0"
 
 tasks.shadowJar {
-  archiveBaseName = "DesktopClicker"
+  archiveBaseName = "MPC"
   archiveVersion = version
   destinationDirectory = layout.buildDirectory.dir("builtJars")
 }
