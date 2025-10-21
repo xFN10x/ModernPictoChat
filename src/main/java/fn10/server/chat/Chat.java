@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.naming.NameNotFoundException;
 
@@ -84,7 +85,7 @@ public class Chat {
     }
 
     public static class ChatMessage {
-        public UserInfo username;
+        public UserInfo user;
         public Instant dateSent;
         public String data;
         public Chat chatSent;
@@ -123,7 +124,7 @@ public class Chat {
 
         if (peopleInHere.containsKey(sender)) {
             ChatMessage message = new ChatMessage();
-            message.username = peopleInHere.get(sender);
+            message.user = peopleInHere.get(sender);
             message.dateSent = Instant.now();
             message.data = data;
             message.chatSent = this;
@@ -166,8 +167,8 @@ public class Chat {
         return maxPeople;
     }
 
-    public void addPerson(UserInfo username, Session ses) {
-        peopleInHere.put(ses, username);
+    public void addPerson(UserInfo user, Session ses) {
+        peopleInHere.put(Objects.requireNonNull(ses), Objects.requireNonNull(user));
     }
 
     public void removePerson(Session ses) {

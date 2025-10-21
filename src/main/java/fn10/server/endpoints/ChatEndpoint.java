@@ -39,7 +39,7 @@ public class ChatEndpoint {
 
     private static class JoiningChatData {
         public int roomID;
-        public UserInfo username;
+        public UserInfo user;
     }
 
     private static class SendingChatData {
@@ -82,7 +82,7 @@ public class ChatEndpoint {
     public static void notifySessionsOfMessage(Session exclude, ChatMessage mes) {
         ChatNotification building = new ChatNotification();
         building.type = ChatNotification.CHAT;
-        building.user = mes.username;
+        building.user = mes.user;
         building.data = mes.data;
         notifySessionsOfMessage(exclude, building);
     }
@@ -161,47 +161,51 @@ public class ChatEndpoint {
             return;
         }
 
-        switch (got.messageType) {
-            case Message.ENTER_ROOM:
-                JoiningChatData data;
-                try {
-                    data = gson.fromJson(got.data, JoiningChatData.class);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    session.getAsyncRemote().sendText("Bad Request");
+        try {
+            switch (got.messageType) {
+                case Message.ENTER_ROOM:
+                    JoiningChatData data;
+                    try {
+                        data = gson.fromJson(got.data, JoiningChatData.class);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        session.getAsyncRemote().sendText("Bad Request");
+                        break;
+                    }
+                    Chat.getPublicChatById(data.roomID).addPerson(data.user, session);
+                    usernames.put(session, data.user);
+                    session.getAsyncRemote()
+                            .sendText("{\"status\": \"Connected to chat.\", \"id\": \"" + session.getId() + "\"}");
+                    notifySessionsOfJoining(session);
+                    for (Session sessions : currentClients) {
+                        sessions.getAsyncRemote().sendText("reloadChats");
+                    }
                     break;
-                }
-                Chat.getPublicChatById(data.roomID).addPerson(data.username, session);
-                usernames.put(session, data.username);
-                session.getAsyncRemote()
-                        .sendText("{\"status\": \"Connected to chat.\", \"id\": \"" + session.getId() + "\"}");
-                notifySessionsOfJoining(session);
-                for (Session sessions : currentClients) {
-                    sessions.getAsyncRemote().sendText("reloadChats");
-                }
-                break;
-            case Message.SEND_MESSAGE:
-                Chat in = Chat.getChatPersonIsIn(session);
-                SendingChatData sendData;
-                try {
-                    sendData = gson.fromJson(got.data, SendingChatData.class);
-                } catch (Exception e) {
-                    session.getAsyncRemote().sendText("Bad Request");
-                    return;
-                }
-                // System.out.println(in);
-                if (in != null) {
-                    // idk why the hell this is using the wrong session for sending, we are just
-                    // gonna have to save it client sided
-                    in.sendMessage(sendData.id, sendData.data);
-                } else {
-                    session.getAsyncRemote().sendText("{\"status\": \"Not in chat\"}");
-                }
-                break;
+                case Message.SEND_MESSAGE:
+                    Chat in = Chat.getChatPersonIsIn(session);
+                    SendingChatData sendData;
+                    try {
+                        sendData = gson.fromJson(got.data, SendingChatData.class);
+                    } catch (Exception e) {
+                        session.getAsyncRemote().sendText("Bad Request");
+                        return;
+                    }
+                    // System.out.println(in);
+                    if (in != null) {
+                        // idk why the hell this is using the wrong session for sending, we are just
+                        // gonna have to save it client sided
+                        in.sendMessage(sendData.id, sendData.data);
+                    } else {
+                        session.getAsyncRemote().sendText("{\"status\": \"Not in chat\"}");
+                    }
+                    break;
 
-            default:
-                System.out.println("Cannot find that message type");
-                break;
+                default:
+                    System.out.println("Cannot find that message type");
+                    break;
+            }
+        } catch (Exception e) {
+            session.getAsyncRemote().sendText("{\"status\": \"Internal Server Error\", \"error\": \"" + e.getMessage() + "\"}");
         }
     }
 
