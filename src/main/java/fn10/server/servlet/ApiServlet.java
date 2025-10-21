@@ -73,11 +73,7 @@ public class ApiServlet extends HttpServlet {
                         .getPublicChatById(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)));
                 response.setContentType("text/plain");
                 response.getWriter().print(
-                        chat2.getPeopleInChat().containsValue(URLDecoder.decode(UriParts[3], StandardCharsets.UTF_8)));
-                System.out.println(
-                        "Chat: " + Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)) + " has: \""
-                                + String.join(", ", chat2.getPeopleInChat().values()) + "\" in it. Checking: "
-                                + URLDecoder.decode(UriParts[3], StandardCharsets.UTF_8));
+                        chat2.userIsInChat(URLDecoder.decode(UriParts[3], StandardCharsets.UTF_8)));
                 break;
 
             case "capchaValid":
@@ -101,23 +97,6 @@ public class ApiServlet extends HttpServlet {
 
         System.out.println("(" + getClass().getSimpleName() + ") " + request.getMethod() + " ("
                 + request.getContentType() + "): " + request.getRequestURI());
-    }
-
-    private static class CapchaVerifyRequest {
-        @SuppressWarnings("unused")
-        public String secret;
-        @SuppressWarnings("unused")
-        public String response;
-
-        public CapchaVerifyRequest(String s, String re) {
-            this.secret = s;
-            this.response = re;
-            /*
-             * if (mote != null)
-             * if (mote.isBlank())
-             * this.remoteip = mote;
-             */ // lets not send the ip of everyone to google :)
-        }
     }
 
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -146,16 +125,6 @@ public class ApiServlet extends HttpServlet {
 
                     CloseableHttpClient client = HttpClients.createDefault();
                     HttpPost post = new HttpPost("https://hcaptcha.com/siteverify");
-
-                    /*
-                     * post.setEntity(EntityBuilder.create().setContentType(ContentType.
-                     * APPLICATION_JSON)
-                     * .setText(gson.toJson(
-                     * new CapchaVerifyRequest(Files.readString(Path.of(App.path,
-                     * "secretCapchaKey.txt")),
-                     * clientKey)))
-                     * .build());
-                     */
 
                     List<NameValuePair> params = new ArrayList<NameValuePair>();
                     params.add(new BasicNameValuePair("secret",

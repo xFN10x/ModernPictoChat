@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.naming.NameNotFoundException;
 
 import fn10.server.endpoints.ChatEndpoint;
+import fn10.server.endpoints.ChatEndpoint.UserInfo;
 import jakarta.websocket.Session;
 
 public class Chat {
@@ -83,20 +84,28 @@ public class Chat {
     }
 
     public static class ChatMessage {
-        public String username;
+        public UserInfo username;
         public Instant dateSent;
         public String data;
-
+        public Chat chatSent;
     }
 
     private final int maxPeople = 15;
     private final int id;
     public final String Name;
-    private Map<Session, String> peopleInHere = new HashMap<Session, String>();
+    private Map<Session, UserInfo> peopleInHere = new HashMap<Session, UserInfo>();
     private List<ChatMessage> messages = new ArrayList<ChatMessage>();
 
     public int getId() {
         return id;
+    }
+
+    public boolean userIsInChat(String username) {
+        for (UserInfo value : peopleInHere.values()) {
+            if (value.username.equals(username))
+                return true;
+        }
+        return false;
     }
 
     public void sendMessage(String senderID, String data) {
@@ -108,7 +117,7 @@ public class Chat {
             }
         }
         if (sender == null) {
-            System.out.println("(" + getClass().getSimpleName() + ")  Session " + sender.getId()
+            System.out.println("(" + getClass().getSimpleName() + ")  Session " + senderID
                     + ", isnt in here! Chat: " + Name);
         }
 
@@ -117,6 +126,7 @@ public class Chat {
             message.username = peopleInHere.get(sender);
             message.dateSent = Instant.now();
             message.data = data;
+            message.chatSent = this;
             messages.add(message);
             System.out.println("Chat sent by " + senderID);
             try {
@@ -148,7 +158,7 @@ public class Chat {
         return peopleInHere.size();
     }
 
-    public Map<Session, String> getPeopleInChat() {
+    public Map<Session, UserInfo> getPeopleInChat() {
         return peopleInHere;
     }
 
@@ -156,7 +166,7 @@ public class Chat {
         return maxPeople;
     }
 
-    public void addPerson(String username, Session ses) {
+    public void addPerson(UserInfo username, Session ses) {
         peopleInHere.put(ses, username);
     }
 

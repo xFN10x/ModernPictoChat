@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Vector;
 
 import javax.naming.NameNotFoundException;
 
@@ -25,6 +26,8 @@ import jakarta.websocket.server.ServerEndpoint;
 @ServerEndpoint("/ws")
 public class ChatEndpoint {
 
+    private static final String defaultIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0BAMAAAA5+MK5AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAeUExURQAAAAMDA+/v7/////T09BAQEPr6+vn5+fX19f7+/sOgV/8AAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAFBhaW50Lk5FVCA1LjEuOWxu2j4AAAC2ZVhJZklJKgAIAAAABQAaAQUAAQAAAEoAAAAbAQUAAQAAAFIAAAAoAQMAAQAAAAIAAAAxAQIAEAAAAFoAAABphwQAAQAAAGoAAAAAAAAAYAAAAAEAAABgAAAAAQAAAFBhaW50Lk5FVCA1LjEuOQADAACQBwAEAAAAMDIzMAGgAwABAAAAAQAAAAWgBAABAAAAlAAAAAAAAAACAAEAAgAEAAAAUjk4AAIABwAEAAAAMDEwMAAAAABMz8BIJY/XoAAAAjpJREFUeNrt20ENQjEQRdFvAQtYqAUsYAELWMACbtmTvMUk/dBMz913pqf7HseSXVL/vhg6Ojo6Ojo6Ojo6Ojo6Ojo6Onrz0NHR0ZuHjo6O3jx0dHT05qGjo6M3Dx0dHb156Ojo6Od3bRI6Ojo6Ojo6eoPQ0dHR0dHR0RuEjo6Ojo6Ojt4gdHR0dHR0dPQGoaOjo6Ojo6M3CB0dHb1KH6k4apT7xSh0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR09O70W+qeeqTifeOoZ+qVQkdHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dH/24sGTo6Ojo6Ojo6Ojo6Ojo6+nqho6Ojo6Ojo6Ojo6Ojo6OvFzo6Ojo6Ojo6Ojo6Ojo6+nqhn0uvV4fEUe8UOjo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ovq29Hhi4pvE6svR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0belz1xSrv4zBB0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR19W3p9+8TQ0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dElSZIkSZIkSZIkSZIkSZIkSZJW7gO8gusn2MJ+5wAAAABJRU5ErkJggg==";
+
     private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     private static class Message {
@@ -36,7 +39,7 @@ public class ChatEndpoint {
 
     private static class JoiningChatData {
         public int roomID;
-        public String username;
+        public UserInfo username;
     }
 
     private static class SendingChatData {
@@ -44,22 +47,42 @@ public class ChatEndpoint {
         public String id;
     }
 
+    public static class UserInfo {
+        public String username;
+        public String iconData;
+        public int messagesSent;
+        public Vector<Byte> rgb;
+
+        public UserInfo(String name, String iconData, int messagesSent, int r, int g, int b) {
+            this.username = name;
+            this.iconData = iconData;
+            this.messagesSent = messagesSent;
+            this.rgb = new Vector<Byte>(3);
+            rgb.add((byte) r);
+            rgb.add((byte) g);
+            rgb.add((byte) b);
+        }
+    }
+
     private static class ChatNotification {
         public static final int JOINING = 0;
         public static final int LEAVNG = 1;
         public static final int CHAT = 2;
+        @SuppressWarnings("unused")
         public int type;
-        public String username;
+        @SuppressWarnings("unused")
+        public UserInfo user;
+        @SuppressWarnings("unused")
         public String data;
     }
 
     private static Set<Session> currentClients = Collections.synchronizedSet(new HashSet<Session>());
-    private static Map<Session, String> usernames = new HashMap<Session, String>();
+    private static Map<Session, UserInfo> usernames = new HashMap<Session, UserInfo>();
 
     public static void notifySessionsOfMessage(Session exclude, ChatMessage mes) {
         ChatNotification building = new ChatNotification();
         building.type = ChatNotification.CHAT;
-        building.username = mes.username;
+        building.user = mes.username;
         building.data = mes.data;
         notifySessionsOfMessage(exclude, building);
     }
@@ -68,9 +91,9 @@ public class ChatEndpoint {
         ChatNotification building = new ChatNotification();
         building.type = ChatNotification.JOINING;
         if (usernames.containsKey(joining))
-            building.username = usernames.get(joining);
+            building.user = usernames.get(joining);
         else {
-            building.username = "UNKNOWN";
+            building.user = new UserInfo("UNKNOWN", defaultIcon, 0, 0, 0, 0);
         }
         notifySessionsOfMessage(null, building);
     }
@@ -79,9 +102,9 @@ public class ChatEndpoint {
         ChatNotification building = new ChatNotification();
         building.type = ChatNotification.LEAVNG;
         if (usernames.containsKey(leaving))
-            building.username = usernames.get(leaving);
+            building.user = usernames.get(leaving);
         else {
-            building.username = "UNKNOWN";
+            building.user = new UserInfo("UNKNOWN", defaultIcon, 0, 0, 0, 0);
         }
         notifySessionsOfMessage(null, building);
     }
@@ -112,6 +135,8 @@ public class ChatEndpoint {
 
     @OnMessage
     public void messageGot(String message, Session session) {
+        System.out.println(
+                session.getMaxIdleTimeout());
         System.out.println("Got message: " + message);
         if (message.equals("ping")) {
             System.out.println("Got Ping from " + session.getId());

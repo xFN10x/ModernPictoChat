@@ -54,17 +54,16 @@ public class App {
 
         Server server = new Server();
 
-        ServerConnector connector = new ServerConnector(server);
-        // connector.setPort(nl3);
+        
 
         ServletContextHandler handler = new ServletContextHandler();
         server.setHandler(handler);
 
         HttpConfiguration https = new HttpConfiguration();
-        https.addCustomizer(new SecureRequestCustomizer());
+        https.addCustomizer(new SecureRequestCustomizer(false));
 
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-
+        
         sslContextFactory.setKeyStorePath(path + "cert.jks");
         sslContextFactory.setKeyStorePassword("isaplate");
         sslContextFactory.setKeyManagerPassword("isaplate");
@@ -73,6 +72,10 @@ public class App {
                 new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
                 new HttpConnectionFactory(https));
         sslConnector.setPort(nl2);
+
+        ServerConnector connector = new ServerConnector(server,
+                new HttpConnectionFactory(https));
+        connector.setPort(nl2 + 1);
 
         JakartaWebSocketServletContainerInitializer.configure(handler, null);
         handler.addServlet(WebsocketServlet.class, "/ws");
