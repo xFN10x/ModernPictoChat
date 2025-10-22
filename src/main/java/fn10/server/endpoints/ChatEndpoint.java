@@ -1,5 +1,6 @@
 package fn10.server.endpoints;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
@@ -9,6 +10,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import javax.naming.NameNotFoundException;
+import javax.swing.plaf.ColorUIResource;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -30,6 +32,11 @@ public class ChatEndpoint {
 
     private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
+    /**
+     * The base for all things chat.
+     * 
+     * Data is a string, which is a json of JoiningChatData, or SendingChatData; Depending on the type.
+     */
     private static class Message {
         public static final int ENTER_ROOM = 0;
         public static final int SEND_MESSAGE = 1;
@@ -51,16 +58,13 @@ public class ChatEndpoint {
         public String username;
         public String iconData;
         public int messagesSent;
-        public Vector<Byte> rgb;
+        public String rgb;
 
-        public UserInfo(String name, String iconData, int messagesSent, int r, int g, int b) {
+        public UserInfo(String name, String iconData, int messagesSent, java.awt.Color color) {
             this.username = name;
             this.iconData = iconData;
             this.messagesSent = messagesSent;
-            this.rgb = new Vector<Byte>(3);
-            rgb.add((byte) r);
-            rgb.add((byte) g);
-            rgb.add((byte) b);
+            this.rgb = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());  
         }
     }
 
@@ -93,7 +97,7 @@ public class ChatEndpoint {
         if (usernames.containsKey(joining))
             building.user = usernames.get(joining);
         else {
-            building.user = new UserInfo("UNKNOWN", defaultIcon, 0, 0, 0, 0);
+            building.user = new UserInfo("UNKNOWN", defaultIcon, 0, Color.BLACK);
         }
         notifySessionsOfMessage(null, building);
     }
@@ -104,7 +108,7 @@ public class ChatEndpoint {
         if (usernames.containsKey(leaving))
             building.user = usernames.get(leaving);
         else {
-            building.user = new UserInfo("UNKNOWN", defaultIcon, 0, 0, 0, 0);
+            building.user = new UserInfo("UNKNOWN", defaultIcon, 0, Color.BLACK);
         }
         notifySessionsOfMessage(null, building);
     }
