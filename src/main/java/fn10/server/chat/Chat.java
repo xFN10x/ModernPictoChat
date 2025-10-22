@@ -59,15 +59,17 @@ public class Chat {
     private static class ChatInfo {
         @SuppressWarnings("unused")
         public String name;
+        public int id;
         @SuppressWarnings("unused")
         public int maxPeople;
         @SuppressWarnings("unused")
         public int peopleCurrently;
 
-        public ChatInfo(String name, int max, int rn) {
+        public ChatInfo(String name, int id, int max, int rn) {
             this.name = name;
             this.maxPeople = max;
             this.peopleCurrently = rn;
+            this.id = id;
         }
     }
 
@@ -79,7 +81,7 @@ public class Chat {
     public static Map<Integer, ChatInfo> getChatIdsAndPeopleInThem() {
         LinkedHashMap<Integer, ChatInfo> building = new LinkedHashMap<Integer, ChatInfo>();
         for (Chat chat : chats) {
-            building.put(chat.id, new ChatInfo(chat.Name, chat.maxPeople, chat.peopleInHere.size()));
+            building.put(chat.id, new ChatInfo(chat.Name, chat.getId(), chat.maxPeople, chat.peopleInHere.size()));
         }
         return building;
     }
