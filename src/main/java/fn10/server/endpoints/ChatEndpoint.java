@@ -205,7 +205,7 @@ public class ChatEndpoint {
                     break;
             }
         } catch (Exception e) {
-            session.getAsyncRemote().sendText("{\"status\": \"Internal Server Error\", \"error\": \"" + e.getMessage() + "\"}");
+            session.getAsyncRemote().sendText("{\"status\": \"Internal Server Error\", \"error\": \"" + e.getCause() + "\"}");
         }
     }
 
