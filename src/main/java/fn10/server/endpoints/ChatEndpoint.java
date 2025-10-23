@@ -17,6 +17,8 @@ import com.google.gson.GsonBuilder;
 
 import fn10.server.chat.Chat;
 import fn10.server.chat.Chat.ChatMessage;
+import fn10.server.servlet.ApiServlet;
+import fn10.server.servlet.ApiServlet.HCaptchaValidResponce;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.OnClose;
@@ -35,7 +37,8 @@ public class ChatEndpoint {
     /**
      * The base for all things chat.
      * 
-     * Data is a string, which is a json of JoiningChatData, or SendingChatData; Depending on the type.
+     * Data is a string, which is a json of JoiningChatData, or SendingChatData;
+     * Depending on the type.
      */
     private static class Message {
         public static final int ENTER_ROOM = 0;
@@ -64,7 +67,7 @@ public class ChatEndpoint {
             this.username = name;
             this.iconData = iconData;
             this.messagesSent = messagesSent;
-            this.rgb = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());  
+            this.rgb = String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
         }
     }
 
@@ -137,23 +140,38 @@ public class ChatEndpoint {
         System.out.println("New Client connected: " + session.getId());
         session.setMaxIdleTimeout(5100);
         currentClients.add(session);
-        
+
     }
 
     @OnMessage
     public void messageGot(String message, Session session) {
-        if (message.startsWith("HANDSHAKE ")) {
+        if (message.startsWith("HANDSHAKE")) {
+            String[] key = message.split(" ");
+            HCaptchaValidResponce res = ApiServlet.isCaptchaValid(key[1]);
 
+            System.out.println("(" + getClass().getSimpleName() + ") Got a responce from HCaptcha: " + res.toString());
+            if (res.success) {
+                session.getAsyncRemote().sendText("Verified");
+                authClients.add(session);
+                return;
+            } else {
+                session.getAsyncRemote().sendText("goBack");
+            }
+            if (key.length < 2) {
+                session.getAsyncRemote().sendText("Bad request");
+                return;
+            }
+            return;
         } else {
             if (!authClients.contains(session)) {
                 session.getAsyncRemote().sendText("No.");
                 try {
                     session.close(
-                        new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT, "Was not authenticated"));
+                            new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT, "Was not authenticated"));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                    return;
+                return;
             }
         }
         System.out.println(
@@ -226,7 +244,8 @@ public class ChatEndpoint {
                     break;
             }
         } catch (Exception e) {
-            session.getAsyncRemote().sendText("{\"status\": \"Internal Server Error\", \"error\": \"" + e.getCause() + "\"}");
+            session.getAsyncRemote()
+                    .sendText("{\"status\": \"Internal Server Error\", \"error\": \"" + e.getCause() + "\"}");
         }
     }
 

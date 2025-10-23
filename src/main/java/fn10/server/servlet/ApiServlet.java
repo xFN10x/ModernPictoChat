@@ -5,6 +5,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +24,8 @@ import org.eclipse.jetty.http.HttpStatus;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.annotations.SerializedName;
 
 import fn10.server.App;
 import fn10.server.chat.Chat;
@@ -33,6 +36,91 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public class ApiServlet extends HttpServlet {
     private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    /**
+     * {
+     * "success": true|false, // is the passcode valid, and does it meet security
+     * criteria you specified, e.g. sitekey?
+     * 
+     * "challenge_ts": timestamp, // timestamp of the challenge (ISO format
+     * yyyy-MM-dd'T'HH:mm:ssZZ)
+     * 
+     * "hostname": string, // the hostname of the site where the challenge was
+     * passed
+     * 
+     * "credit": true|false, // optional: deprecated field
+     * 
+     * "error-codes": [...] // optional: any error codes
+     * }
+     */
+    public static class HCaptchaValidResponce {
+        public boolean success;
+        private String challenge_ts;
+        public String hostname;
+        public boolean credit;
+        @SerializedName("error-codes")
+        public String[] errorCodes;
+
+        public Instant getTimeComplete() {
+            return Instant.parse(challenge_ts);
+        }
+
+        public String toString() {
+            return gson.toJson(this);
+        }
+    }
+
+    public static HCaptchaValidResponce isCaptchaValid(String clientKey) {
+        if (clientKey.isBlank()) {
+            HCaptchaValidResponce build = new HCaptchaValidResponce();
+            build.success = false;
+            build.challenge_ts = Instant.now().toString();
+            return build;
+        }
+
+        CloseableHttpClient client = HttpClients.createDefault();
+        HttpPost post = new HttpPost("https://hcaptcha.com/siteverify");
+
+        List<NameValuePair> params = new ArrayList<NameValuePair>();
+        try {
+            params.add(new BasicNameValuePair("secret",
+                    Files.readString(Path.of(App.path, "secretCapchaKey.txt")).trim()));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        params.add(new BasicNameValuePair("response",
+                clientKey));
+
+        post.setHeader("Content-Type", "application/x-www-form-urlencoded");
+        post.setHeader("Accept", "application/json");
+
+        post.setEntity(new UrlEncodedFormEntity(params));
+
+        System.out.println("(STATIC " + ApiServlet.class.getSimpleName() + ") "
+                + "Sending POST to https://hcaptcha.com/siteverify. Headers: ");
+        for (Header header : post.getHeaders()) {
+            System.out.println(header.getName() + ": " + header.getValue());
+        }
+
+        try {
+            return gson.fromJson(client.execute(post, new HttpClientResponseHandler<String>() {
+
+                @Override
+                public String handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
+                    HttpEntity entity = response.getEntity();
+                    String res = new String(entity.getContent().readAllBytes());
+                    System.out.println("(" + getClass().getSimpleName() + ") "
+                            + "Got responce from recaptcha: " + res);
+                    return res;
+                }
+
+            }), HCaptchaValidResponce.class);
+        } catch (JsonSyntaxException | IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 
     public void doGet(
             HttpServletRequest request,
@@ -77,15 +165,6 @@ public class ApiServlet extends HttpServlet {
                 break;
 
             case "capchaValid":
-
-                /*
-                 * if (UriParts.length > 1 && !UriParts[1].isEmpty()) {
-                 * 
-                 * } else {
-                 * response.setStatus(HttpStatus.METHOD_NOT_ALLOWED_405);
-                 * response.getWriter().println("Missing ");
-                 * }
-                 */
                 response.setStatus(HttpStatus.METHOD_NOT_ALLOWED_405);
 
                 break;
@@ -116,55 +195,7 @@ public class ApiServlet extends HttpServlet {
                 break;
 
             case "capchaValid":
-                try {
-                    String clientKey = new String(request.getInputStream().readAllBytes()).trim();
-                    if (clientKey.isBlank()) {
-                        response.setStatus(HttpStatus.BAD_REQUEST_400);
-                        break;
-                    }
-
-                    CloseableHttpClient client = HttpClients.createDefault();
-                    HttpPost post = new HttpPost("https://hcaptcha.com/siteverify");
-
-                    List<NameValuePair> params = new ArrayList<NameValuePair>();
-                    params.add(new BasicNameValuePair("secret",
-                            Files.readString(Path.of(App.path, "secretCapchaKey.txt")).trim()));
-                    params.add(new BasicNameValuePair("response",
-                            clientKey));
-
-                    post.setHeader("Content-Type", "application/x-www-form-urlencoded");
-                    post.setHeader("Accept", "application/json");
-
-                    post.setEntity(new UrlEncodedFormEntity(params));
-
-                    System.out.println("(" + getClass().getSimpleName() + ") "
-                            + "Sending POST to https://hcaptcha.com/siteverify. Headers: ");
-                    for (Header header : post.getHeaders()) {
-                        System.out.println(header.getName() + ": " + header.getValue());
-                    }
-                    // + new String(post.getEntity().getContent().readAllBytes()));
-
-                    response.setContentType("text/plain");
-                    response.getWriter().println(client.execute(post, new HttpClientResponseHandler<String>() {
-
-                        @Override
-                        public String handleResponse(ClassicHttpResponse response) throws HttpException, IOException {
-                            HttpEntity entity = response.getEntity();
-                            String res = new String(entity.getContent().readAllBytes());
-                            System.out.println("(" + getClass().getSimpleName() + ") "
-                                    + "Got responce from recaptcha: " + res);
-                            return res;
-                        }
-
-                    }));
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR_500);
-                }
-
-                // response.setStatus(HttpStatus.METHOD_NOT_ALLOWED_405);
-
+                response.setStatus(HttpStatus.GONE_410);
                 break;
 
             default:
