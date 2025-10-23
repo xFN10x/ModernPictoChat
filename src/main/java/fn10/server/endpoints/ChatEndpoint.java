@@ -81,6 +81,7 @@ public class ChatEndpoint {
     }
 
     private static Set<Session> currentClients = Collections.synchronizedSet(new HashSet<Session>());
+    private static Set<Session> authClients = Collections.synchronizedSet(new HashSet<Session>());
     private static Map<Session, UserInfo> usernames = new HashMap<Session, UserInfo>();
 
     public static void notifySessionsOfMessage(Session exclude, ChatMessage mes) {
@@ -134,11 +135,27 @@ public class ChatEndpoint {
     @OnOpen
     public void clientConnected(Session session, EndpointConfig config) {
         System.out.println("New Client connected: " + session.getId());
+        session.setMaxIdleTimeout(5100);
         currentClients.add(session);
+        
     }
 
     @OnMessage
     public void messageGot(String message, Session session) {
+        if (message.startsWith("HANDSHAKE ")) {
+
+        } else {
+            if (!authClients.contains(session)) {
+                session.getAsyncRemote().sendText("No.");
+                try {
+                    session.close(
+                        new CloseReason(CloseReason.CloseCodes.CANNOT_ACCEPT, "Was not authenticated"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                    return;
+            }
+        }
         System.out.println(
                 session.getMaxIdleTimeout());
         System.out.println("Got message: " + message);
