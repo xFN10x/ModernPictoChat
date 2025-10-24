@@ -141,12 +141,24 @@ public class ApiServlet extends HttpServlet {
                 if (UriParts[2].isEmpty() || UriParts[2] == null) {
                     response.setStatus(HttpStatus.BAD_REQUEST_400);
                 }
-                Chat chat = Chat.getChatByName(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8));
+                Chat chat = Chat.getChat(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8));
                 if (chat == null) {
                     System.out.println("Cannot find chat with name \"" + UriParts[2] + '"');
                     response.setStatus(HttpStatus.NOT_FOUND_404);
                 }
                 response.getWriter().println(chat.getId());
+                break;
+
+            case "getChatById":
+                if (UriParts[2].isEmpty() || UriParts[2] == null) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                }
+                Chat chat2 = Chat.getChat(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)));
+                if (chat2 == null) {
+                    System.out.println("Cannot find chat with id \"" + UriParts[2] + '"');
+                    response.setStatus(HttpStatus.NOT_FOUND_404);
+                }
+                response.getWriter().println(chat2.Name);
                 break;
 
             case "isPersonInChat":
@@ -157,11 +169,11 @@ public class ApiServlet extends HttpServlet {
                 if (UriParts[3].isEmpty() || UriParts[3] == null) {
                     response.setStatus(HttpStatus.BAD_REQUEST_400);
                 }
-                Chat chat2 = Chat
-                        .getPublicChatById(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)));
+                Chat chat3 = Chat
+                        .getChat(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)));
                 response.setContentType("text/plain");
                 response.getWriter().print(
-                        chat2.userIsInChat(URLDecoder.decode(UriParts[3], StandardCharsets.UTF_8)));
+                        chat3.userIsInChat(URLDecoder.decode(UriParts[3], StandardCharsets.UTF_8)));
                 break;
 
             case "capchaValid":

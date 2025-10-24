@@ -28,6 +28,7 @@ public class Chat {
      * @param id the id corresponding to the chat
      * @return the chat found, or null if it isnt found
      */
+    @Deprecated
     public static Chat getPublicChatById(int id) {
         for (Chat chats : chats) {
             if (chats.id == id)
@@ -36,9 +37,17 @@ public class Chat {
         return null;
     }
 
-    public static Chat getChatByName(String name) {
+    public static Chat getChat(String name) {
         for (Chat chat : chats) {
             if (chat.Name.equals(name))
+                return chat;
+        }
+        return null;
+    }
+
+    public static Chat getChat(int id) {
+        for (Chat chat : chats) {
+            if (chat.id == id)
                 return chat;
         }
         return null;
@@ -59,6 +68,7 @@ public class Chat {
     private static class ChatInfo {
         @SuppressWarnings("unused")
         public String name;
+        @SuppressWarnings("unused")
         public int id;
         @SuppressWarnings("unused")
         public int maxPeople;
@@ -169,8 +179,27 @@ public class Chat {
         return maxPeople;
     }
 
-    public void addPerson(UserInfo user, Session ses) {
+    /**
+     * 
+     * @param user The info of the user joining. Required: Username & Colour
+     * @param ses The session connected to that user
+     * @return a bool indicating if the user was added
+     */
+    public boolean addPerson(UserInfo user, Session ses) {
+        Chat in = getChatPersonIsIn(ses);
+        if (in != null && in != this) {
+            ses.getAsyncRemote()
+                    .sendText("{\"status\": \"Tried to join chat already in.\", \"shownError\": \"Cannot be in multiple chats at once.\"}");
+            return false;
+        } else if (in == this) {
+            ses.getAsyncRemote()
+                    .sendText("{\"status\": \"User is already in this chat.\", \"shownMessage\": \"Already in this chat.\"}");
+            return false;
+        }
         peopleInHere.put(Objects.requireNonNull(ses), Objects.requireNonNull(user));
+        ses.getAsyncRemote()
+                .sendText("{\"status\": \"Connected to chat.\", \"id\": \"" + ses.getId() + "\"}");
+        return true;
     }
 
     public void removePerson(Session ses) {

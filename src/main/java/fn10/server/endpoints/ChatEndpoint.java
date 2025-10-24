@@ -7,11 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
-
 import javax.naming.NameNotFoundException;
-import javax.swing.plaf.ColorUIResource;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -19,6 +15,7 @@ import fn10.server.chat.Chat;
 import fn10.server.chat.Chat.ChatMessage;
 import fn10.server.servlet.ApiServlet;
 import fn10.server.servlet.ApiServlet.HCaptchaValidResponce;
+import fn10.server.util.ChatGsonTypeAdapter;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.EndpointConfig;
 import jakarta.websocket.OnClose;
@@ -32,7 +29,8 @@ public class ChatEndpoint {
 
     private static final String defaultIcon = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAfQAAAH0BAMAAAA5+MK5AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAeUExURQAAAAMDA+/v7/////T09BAQEPr6+vn5+fX19f7+/sOgV/8AAAAJcEhZcwAADsMAAA7DAcdvqGQAAAAYdEVYdFNvZnR3YXJlAFBhaW50Lk5FVCA1LjEuOWxu2j4AAAC2ZVhJZklJKgAIAAAABQAaAQUAAQAAAEoAAAAbAQUAAQAAAFIAAAAoAQMAAQAAAAIAAAAxAQIAEAAAAFoAAABphwQAAQAAAGoAAAAAAAAAYAAAAAEAAABgAAAAAQAAAFBhaW50Lk5FVCA1LjEuOQADAACQBwAEAAAAMDIzMAGgAwABAAAAAQAAAAWgBAABAAAAlAAAAAAAAAACAAEAAgAEAAAAUjk4AAIABwAEAAAAMDEwMAAAAABMz8BIJY/XoAAAAjpJREFUeNrt20ENQjEQRdFvAQtYqAUsYAELWMACbtmTvMUk/dBMz913pqf7HseSXVL/vhg6Ojo6Ojo6Ojo6Ojo6Ojo6Onrz0NHR0ZuHjo6O3jx0dHT05qGjo6M3Dx0dHb156Ojo6Od3bRI6Ojo6Ojo6eoPQ0dHR0dHR0RuEjo6Ojo6Ojt4gdHR0dHR0dPQGoaOjo6Ojo6M3CB0dHb1KH6k4apT7xSh0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR09O70W+qeeqTifeOoZ+qVQkdHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dH/24sGTo6Ojo6Ojo6Ojo6Ojo6+nqho6Ojo6Ojo6Ojo6Ojo6OvFzo6Ojo6Ojo6Ojo6Ojo6+nqhn0uvV4fEUe8UOjo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ojo6Ovq29Hhi4pvE6svR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0belz1xSrv4zBB0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR19W3p9+8TQ0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dHR0dElSZIkSZIkSZIkSZIkSZIkSZJW7gO8gusn2MJ+5wAAAABJRU5ErkJggg==";
 
-    private static Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    private static Gson gson = new GsonBuilder().setPrettyPrinting()
+            .registerTypeAdapter(Chat.class, new ChatGsonTypeAdapter()).create();
 
     /**
      * The base for all things chat.
@@ -43,6 +41,7 @@ public class ChatEndpoint {
     private static class Message {
         public static final int ENTER_ROOM = 0;
         public static final int SEND_MESSAGE = 1;
+        public static final int LEAVE_ROOM = 2;
         public int messageType;
         public String data;
     }
@@ -81,6 +80,7 @@ public class ChatEndpoint {
         public UserInfo user;
         @SuppressWarnings("unused")
         public String data;
+        public Chat chat;
     }
 
     private static Set<Session> currentClients = Collections.synchronizedSet(new HashSet<Session>());
@@ -92,12 +92,14 @@ public class ChatEndpoint {
         building.type = ChatNotification.CHAT;
         building.user = mes.user;
         building.data = mes.data;
+        building.chat = mes.chatSent;
         notifySessionsOfMessage(exclude, building);
     }
 
     public static void notifySessionsOfJoining(Session joining) {
         ChatNotification building = new ChatNotification();
         building.type = ChatNotification.JOINING;
+        building.chat = Chat.getChatPersonIsIn(joining);
         if (usernames.containsKey(joining))
             building.user = usernames.get(joining);
         else {
@@ -106,9 +108,10 @@ public class ChatEndpoint {
         notifySessionsOfMessage(null, building);
     }
 
-    public static void notifySessionsOfLeaving(Session leaving) {
+    public static void notifySessionsOfLeaving(Session leaving, Chat leavingChat) {
         ChatNotification building = new ChatNotification();
         building.type = ChatNotification.LEAVNG;
+        building.chat = leavingChat;
         if (usernames.containsKey(leaving))
             building.user = usernames.get(leaving);
         else {
@@ -119,7 +122,7 @@ public class ChatEndpoint {
 
     public static void notifySessionsOfMessage(Session exclude, ChatNotification mes) {
         for (Session session : currentClients) {
-            if ((Chat.getChatPersonIsIn(session) != null && session != exclude) || exclude == null) {
+            if (Chat.getChatPersonIsIn(session) == mes.chat && (session != exclude || exclude == null)) {
                 session.getAsyncRemote().sendText(gson.toJson(mes));
             }
         }
@@ -138,7 +141,7 @@ public class ChatEndpoint {
     @OnOpen
     public void clientConnected(Session session, EndpointConfig config) {
         System.out.println("New Client connected: " + session.getId());
-        session.setMaxIdleTimeout(5100);
+        session.setMaxIdleTimeout(6000);
         currentClients.add(session);
 
     }
@@ -188,7 +191,7 @@ public class ChatEndpoint {
         } else if (message.equals("close")) {
             clientLeft(session,
                     new CloseReason(CloseReason.CloseCodes.GOING_AWAY, "The user reloaded the page/left the page."));
-            notifySessionsOfLeaving(session);
+            notifySessionsOfLeaving(session, Chat.getChatPersonIsIn(session));
             return;
         }
         Message got;
@@ -202,6 +205,17 @@ public class ChatEndpoint {
 
         try {
             switch (got.messageType) {
+                case Message.LEAVE_ROOM:
+                    Chat chat = Chat.getChatPersonIsIn(session);
+                    if (chat == null) {
+                        session.getAsyncRemote()
+                                .sendText(
+                                        "{\"status\": \"User isnt in chat (or it is null)\", \"shownMessage\": \"You aren't inside of a chat.\"}");
+                        break;
+                    }
+                    notifySessionsOfLeaving(session, chat);
+                    chat.removePerson(session);
+                    break;
                 case Message.ENTER_ROOM:
                     JoiningChatData data;
                     try {
@@ -211,13 +225,12 @@ public class ChatEndpoint {
                         session.getAsyncRemote().sendText("Bad Request");
                         break;
                     }
-                    Chat.getPublicChatById(data.roomID).addPerson(data.user, session);
-                    usernames.put(session, data.user);
-                    session.getAsyncRemote()
-                            .sendText("{\"status\": \"Connected to chat.\", \"id\": \"" + session.getId() + "\"}");
-                    notifySessionsOfJoining(session);
-                    for (Session sessions : currentClients) {
-                        sessions.getAsyncRemote().sendText("reloadChats");
+                    if (Chat.getChat(data.roomID).addPerson(data.user, session)) {
+                        usernames.put(session, data.user);
+                        notifySessionsOfJoining(session);
+                        for (Session sessions : currentClients) {
+                            sessions.getAsyncRemote().sendText("reloadChats");
+                        }
                     }
                     break;
                 case Message.SEND_MESSAGE:
@@ -244,6 +257,7 @@ public class ChatEndpoint {
                     break;
             }
         } catch (Exception e) {
+            e.printStackTrace();
             session.getAsyncRemote()
                     .sendText("{\"status\": \"Internal Server Error\", \"error\": \"" + e.getCause() + "\"}");
         }
