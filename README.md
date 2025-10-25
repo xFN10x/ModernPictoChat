@@ -6,14 +6,20 @@
 
 Modern Pictochat is website with the same premise of pictochat; chat pictorally!
 
+## Update 25/10/2025
+This update focuses on server authentication improvements and website Qol.
+- Upgraded Authentication & SSL
+- Added player colours
+- Added Player list
+- Added 5 more chats
+- Now you can type text into the drawing box (You can backspace with shift+backspace)
+- Make drawing smoother & higher quailty
+
 ## Planned Developments
 
 _These features will be added if i continue to work on this_
 
 - Custom Chat Icons
-- Normal Text Chatting
-- Better UI
-- More Chats
 
 **This is outdated, you dont need ssl anymore. Just go to `App.java` and change the varaible `SSL` to `false`**
 
