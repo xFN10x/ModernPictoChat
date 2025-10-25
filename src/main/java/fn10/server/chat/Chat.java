@@ -21,6 +21,11 @@ public class Chat {
     static {
         chats.add(new Chat("Chat A", 0));
         chats.add(new Chat("Chat B", 1));
+        chats.add(new Chat("Chat C", 2));
+        chats.add(new Chat("Chat D", 3));
+        chats.add(new Chat("Chat E",4));
+        chats.add(new Chat("Chat F", 5));
+        chats.add(new Chat("Chat G", 6));
     }
 
     /**
@@ -56,6 +61,7 @@ public class Chat {
     public static List<Chat> getChats() {
         return chats;
     }
+    
 
     public static Chat getChatPersonIsIn(Session ses) {
         for (Chat chat : chats) {
