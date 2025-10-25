@@ -15,6 +15,7 @@ _These features will be added if i continue to work on this_
 - Better UI
 - More Chats
 
+**This is outdated, you dont need ssl anymore. Just go to `App.java` and change the varaible `SSL` to `false`**
 ## Building
 
 Modern Pictochat comes in 2 distinct parts; server, and website. However, you only need to look at this repo for the info.
@@ -41,8 +42,6 @@ gradlew shadowjar
 After it is done, you should be able to find the jar in `/build/builtJars/`
 
 ### Step 2: Setup website, and SSL
-
-**If you dont have any SSL certificates, get them now. It is required to run the server.**
 
 Now, if you have decided to run the jar, you should get a prompt to type a directory. We are going to make that directory now.
 

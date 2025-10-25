@@ -22,6 +22,8 @@ import fn10.server.servlet.WebsocketServlet;
 public class App {
     public static String path;
 
+    private static final transient boolean SSL = true;
+
     public static void main(String[] args) throws IOException {
         System.out.println("Enter address of secrets.");
         System.out.print("Directory (enter 1 or 2 to use presets): ");
@@ -48,30 +50,34 @@ public class App {
             nl2 = Integer.parseInt(scanner.nextLine());
 
         }
-        System.out.println("Starting server on https://127.0.0.1:" + nl2);
+        if (SSL) {
+            System.out.println("Starting server on https://127.0.0.1:" + nl2);
+            System.out.println("(Non-SSL HTTP started at " + "http://127.0.0.1:" + ((nl2) + 1) + ")");
+        } else
+            System.out.println("Starting server on http://127.0.0.1:" + ((nl2) + 1));
 
         scanner.close();
 
         Server server = new Server();
 
-        
-
         ServletContextHandler handler = new ServletContextHandler();
         server.setHandler(handler);
 
         HttpConfiguration https = new HttpConfiguration();
-        https.addCustomizer(new SecureRequestCustomizer(false));
+        https.addCustomizer(new SecureRequestCustomizer());
+        ServerConnector sslConnector;
+        if (SSL) {
+            SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 
-        SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-        
-        sslContextFactory.setKeyStorePath(path + "cert.jks");
-        sslContextFactory.setKeyStorePassword("isaplate");
-        sslContextFactory.setKeyManagerPassword("isaplate");
+            sslContextFactory.setKeyStorePath(path + "cert.jks");
+            sslContextFactory.setKeyStorePassword("isaplate");
+            sslContextFactory.setKeyManagerPassword("isaplate");
 
-        ServerConnector sslConnector = new ServerConnector(server,
-                new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
-                new HttpConnectionFactory(https));
-        sslConnector.setPort(nl2);
+            sslConnector = new ServerConnector(server,
+                    new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()),
+                    new HttpConnectionFactory(https));
+            sslConnector.setPort(nl2);
+        }
 
         ServerConnector connector = new ServerConnector(server,
                 new HttpConnectionFactory(https));
@@ -82,7 +88,10 @@ public class App {
         handler.addServlet(FrontendServlet.class, "/");
         handler.addServlet(ApiServlet.class, "/api/*");
 
-        server.setConnectors(new Connector[] { sslConnector, connector });
+        if (SSL)
+            server.setConnectors(new Connector[] { sslConnector, connector });
+        else
+            server.setConnectors(new Connector[] { connector });
 
         try {
             server.start();
