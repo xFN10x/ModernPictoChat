@@ -22,7 +22,7 @@ import fn10.server.servlet.WebsocketServlet;
 public class App {
     public static String path;
 
-    private static final transient boolean SSL = true;
+    private static transient boolean SSL = true;
 
     public static void main(String[] args) throws IOException {
         System.out.println("Enter address of secrets.");
@@ -44,15 +44,24 @@ public class App {
         }
         System.out.print("Port (HTTPS): ");
         int nl2;
-        if (args.length >= 1) {
+        if (args.length >= 2) {
             nl2 = Integer.parseInt(args[1]);
         } else {
             nl2 = Integer.parseInt(scanner.nextLine());
-
         }
+        System.out.print("SSL? (true/false): ");
+        String nl3;
+        if (args.length >= 3) {
+            nl3 = args[2];
+        } else {
+            nl3 = scanner.nextLine();
+        }
+
+        SSL = Boolean.parseBoolean(nl3);
+        
         if (SSL) {
             System.out.println("Starting server on https://127.0.0.1:" + nl2);
-            System.out.println("(Non-SSL HTTP started at " + "http://127.0.0.1:" + ((nl2) + 1) + ")");
+            System.out.println("(Non-SSL HTTP started at http://127.0.0.1:" + ((nl2) + 1) + ")");
         } else
             System.out.println("Starting server on http://127.0.0.1:" + ((nl2) + 1));
 
@@ -65,7 +74,8 @@ public class App {
 
         HttpConfiguration https = new HttpConfiguration();
         https.addCustomizer(new SecureRequestCustomizer());
-        ServerConnector sslConnector;
+
+        ServerConnector sslConnector = null;
         if (SSL) {
             SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
 

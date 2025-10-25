@@ -16,6 +16,7 @@ _These features will be added if i continue to work on this_
 - More Chats
 
 **This is outdated, you dont need ssl anymore. Just go to `App.java` and change the varaible `SSL` to `false`**
+
 ## Building
 
 Modern Pictochat comes in 2 distinct parts; server, and website. However, you only need to look at this repo for the info.
