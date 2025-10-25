@@ -131,6 +131,21 @@ public class ApiServlet extends HttpServlet {
         String[] UriParts = requestURI.split("/");
 
         switch (UriParts[1]) {
+            case "getPeopleInChat":
+                if (UriParts.length < 3) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
+                }
+                if (UriParts[2].isEmpty() || UriParts[2] == null) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
+                }
+                response.setContentType("text/json");
+
+                response.getWriter().println(gson.toJson(
+                        Chat.getChat(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)))
+                                .getPeopleInChat().values().toArray()));
+                break;
             case "getRoomsAndPeopleInThem":
                 response.setContentType("text/json");
 
@@ -138,8 +153,13 @@ public class ApiServlet extends HttpServlet {
                 break;
 
             case "getChatByName":
+                if (UriParts.length < 3) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
+                }
                 if (UriParts[2].isEmpty() || UriParts[2] == null) {
                     response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
                 }
                 Chat chat = Chat.getChat(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8));
                 if (chat == null) {
@@ -150,8 +170,13 @@ public class ApiServlet extends HttpServlet {
                 break;
 
             case "getChatById":
+                if (UriParts.length < 3) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
+                }
                 if (UriParts[2].isEmpty() || UriParts[2] == null) {
                     response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
                 }
                 Chat chat2 = Chat.getChat(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)));
                 if (chat2 == null) {
@@ -162,12 +187,18 @@ public class ApiServlet extends HttpServlet {
                 break;
 
             case "isPersonInChat":
+                if (UriParts.length < 4) {
+                    response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
+                }
                 // format: api/isPersonInChat/(chat #)/(username)
                 if (UriParts[2].isEmpty() || UriParts[2] == null) {
                     response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
                 }
                 if (UriParts[3].isEmpty() || UriParts[3] == null) {
                     response.setStatus(HttpStatus.BAD_REQUEST_400);
+                    break;
                 }
                 Chat chat3 = Chat
                         .getChat(Integer.parseInt(URLDecoder.decode(UriParts[2], StandardCharsets.UTF_8)));
